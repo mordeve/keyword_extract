@@ -34,7 +34,7 @@ func delete_empty(s []string) []string {
 	return r
 }
 
-func extract(result map[string]interface{},
+func Extract(result map[string]interface{},
 	stopwordMap map[string]interface{},
 	sentence_hyli string) []string {
 
