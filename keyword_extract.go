@@ -1,13 +1,58 @@
 package keyword_extract
 
 import (
+	"bytes"
+	"encoding/json"
+	"io/ioutil"
 	"log"
+	"net/http"
 	"regexp"
 	"sort"
 	"strings"
+	"time"
 
 	"github.com/mordeve/stopwords"
 )
+
+func stemmer(keyword string) map[string]string {
+	requestBody, err := json.Marshal(map[string]string{
+		"input": keyword,
+	})
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	timeout := time.Duration(10 * time.Second)
+	client := http.Client{Timeout: timeout}
+
+	request, err := http.NewRequest("POST",
+		"http://localhost:5000/predict/",
+		bytes.NewBuffer(requestBody))
+	request.Header.Set("Content-Type", "application/json")
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	resp, err := client.Do(request)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+
+	defer resp.Body.Close()
+
+	body, err := ioutil.ReadAll(resp.Body)
+
+	if err != nil {
+		log.Fatalln(err)
+	}
+	// log.Println(string(body))
+	var results map[string]string
+	json.Unmarshal([]byte(body), &results)
+
+	return results
+}
 
 func Unique(slice []string) []string {
 	// create a map with all the values as key
@@ -34,6 +79,14 @@ func delete_empty(s []string) []string {
 	return r
 }
 
+func getStem(s []string) []string {
+	var res []string
+	for _, word := range s {
+		res = append(res, stemmer(word)["stem"])
+	}
+	return res
+}
+
 func Extract(result map[string]interface{},
 	stopwordMap map[string]interface{},
 	sentence_hyli string) []string {
@@ -52,7 +105,6 @@ func Extract(result map[string]interface{},
 		log.Fatal(err2)
 	}
 
-	// sentence_hyli := "derin öğrenme aynı zamanda derin yapılandırılmış öğrenme Yer Açtı öğrenme ya da derin makine öğrenmesi bir veya daha fazla gizli katman içeren yapay sinir ağları ve benzeri makine öğrenme algoritmaları kapsayan çalışma alanıdır yani En az 1 adet yapay sinir ağı kullanıldığı ve birçok Algoritma ile insan eldeki verilerden yeni veriler elde etmesidir derin öğrenme gözetimli gözetimi ve gözetim Sokak gerçekleştirilebilir yapay sinir ağları pekiştirmeli öğrenme yaklaşımıyla da başarılı sonuç vermiştir yapay sinir ağları biyolojik sistemlerde ki bilgi işleme ve dağıtım iletişim düğünlerinin esinlenilmiştir farkları vardır özellikle sinir ağları statik ve sembolik olma elimdeyken çoğu canlı organizmanın biyolojik beyni dinamik plastik ve"
 	cleaned_hyli_num := re.ReplaceAllString(sentence_hyli, " ")
 	cleaned_hyli_punc := re_punc.ReplaceAllString(cleaned_hyli_num, " ")
 	cleaned_hyli := stopwords.CleanString(cleaned_hyli_punc, stopwordMap, true)
@@ -61,13 +113,14 @@ func Extract(result map[string]interface{},
 
 	split_un := Unique(split)
 	split_un_clean := delete_empty(split_un)
+	split_un_stem := getStem(split_un_clean)
 
 	m := make(map[string]float32)
 
-	for k := range split_un_clean {
-		res1 := strings.Count(cleaned_hyli, split_un_clean[k])
+	for k := range split_un_stem {
+		res1 := strings.Count(cleaned_hyli, split_un_stem[k])
 		tf := float32(res1) / float32(len(split))
-		idf := result[split_un_clean[k]]
+		idf := result[split_un_stem[k]]
 		if idf == nil {
 			idf = 5.65
 		}
@@ -75,7 +128,7 @@ func Extract(result map[string]interface{},
 		//fmt.Println(idf)
 		//fmt.Println(tf)
 		//fmt.Println(tf * float32(iAreaId))
-		m[split_un_clean[k]] = (tf * float32(iAreaId))
+		m[split_un_stem[k]] = (tf * float32(iAreaId))
 	}
 
 	type kv struct {
