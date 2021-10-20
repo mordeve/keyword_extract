@@ -120,8 +120,6 @@ func Extract(result map[string]interface{},
 	for k := range split_un_stem {
 		res1 := strings.Count(cleaned_hyli, split_un_stem[k])
 		tf := float32(res1) / float32(len(split))
-		fmt.Println("word: ", split_un_stem[k])
-		fmt.Println("TF: ", tf)
 		idf := result[split_un_stem[k]]
 		if idf == nil {
 			idf = 5.65
