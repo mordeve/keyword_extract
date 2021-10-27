@@ -111,7 +111,7 @@ func Extract(result map[string]interface{},
 	}
 
 	cleaned_hyli_num := re.ReplaceAllString(sentence_hyli, " ")
-	cleaned_hyli_punc := re_punc.ReplaceAllString(cleaned_hyli_num, " ")
+	cleaned_hyli_punc := re_punc.ReplaceAllString(cleaned_hyli_num, "")
 	cleaned_hyli := stopwords.CleanString(cleaned_hyli_punc, stopwordMap, true)
 
 	split := strings.Split(cleaned_hyli, " ")
