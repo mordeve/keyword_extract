@@ -14,7 +14,7 @@ import (
 	"github.com/mordeve/stopwords"
 )
 
-func stemmer(keyword string) map[string]string {
+func stemmer(keyword string, case_ string) map[string]string {
 	requestBody, err := json.Marshal(map[string]string{
 		"input": keyword,
 	})
@@ -27,7 +27,7 @@ func stemmer(keyword string) map[string]string {
 	client := http.Client{Timeout: timeout}
 
 	request, err := http.NewRequest("POST",
-		"http://localhost:5000/predict/",
+		"http://localhost:5000/predict/"+case_,
 		bytes.NewBuffer(requestBody))
 	request.Header.Set("Content-Type", "application/json")
 
@@ -79,21 +79,26 @@ func delete_empty(s []string) []string {
 	return r
 }
 
-func getStem(s []string) []string {
+func getStem(s []string, case_ string) []string {
 	var res []string
 	for _, word := range s {
-		res = append(res, stemmer(word)["stem"])
+		resStem := stemmer(word, case_)["stem"]
+		if resStem != "nan" {
+			res = append(res, resStem)
+		}
 	}
 	return res
 }
 
 func Extract(result map[string]interface{},
 	stopwordMap map[string]interface{},
-	sentence_hyli string) []string {
+	sentence_hyli string,
+	case_ string) []string {
 
 	// result 		 -> words vs. idf scores
 	//  stopwordMap  -> a map for the stopwords
 	// sentence_hyli -> input string
+	// case_          -> case for stemmerApp
 
 	re, err := regexp.Compile("[0-9]+")
 	if err != nil {
@@ -113,7 +118,7 @@ func Extract(result map[string]interface{},
 
 	split_un := Unique(split)
 	split_un_clean := delete_empty(split_un)
-	split_un_stem := getStem(split_un_clean)
+	split_un_stem := getStem(split_un_clean, case_)
 
 	m := make(map[string]float32)
 
@@ -122,7 +127,7 @@ func Extract(result map[string]interface{},
 		tf := float32(res1) / float32(len(split))
 		idf := result[split_un_stem[k]]
 		if idf == nil {
-			idf = 5.65
+			idf = 5.85
 		}
 		iAreaId := idf.(float64)
 		//fmt.Println(idf)
