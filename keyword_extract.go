@@ -115,17 +115,17 @@ func Extract(result map[string]interface{},
 	cleaned_hyli := stopwords.CleanString(cleaned_hyli_punc, stopwordMap, true)
 
 	split := strings.Split(cleaned_hyli, " ")
+	split_stemmed := getStem(split, case_)
 
-	split_un := Unique(split)
-	split_un_clean := delete_empty(split_un)
-	split_un_stem := getStem(split_un_clean, case_)
+	split_stemmed_un := Unique(split_stemmed)
+	split_stemmed_un_clean := delete_empty(split_stemmed_un)
 
 	m := make(map[string]float32)
 
-	for k := range split_un_stem {
-		res1 := strings.Count(cleaned_hyli, split_un_stem[k])
-		tf := float32(res1) / float32(len(split))
-		idf := result[split_un_stem[k]]
+	for k := range split_stemmed_un_clean {
+		res1 := strings.Count(strings.Join(split_stemmed, " "), split_stemmed_un_clean[k])
+		tf := float32(res1) / float32(len(split_stemmed))
+		idf := result[split_stemmed_un_clean[k]]
 		if idf == nil {
 			idf = 5.85
 		}
@@ -133,7 +133,7 @@ func Extract(result map[string]interface{},
 		//fmt.Println(idf)
 		//fmt.Println(tf)
 		//fmt.Println(tf * float32(iAreaId))
-		m[split_un_stem[k]] = (tf * float32(iAreaId))
+		m[split_stemmed_un_clean[k]] = (tf * float32(iAreaId))
 	}
 
 	type kv struct {
