@@ -90,6 +90,20 @@ func getStem(s []string, case_ string) []string {
 	return res
 }
 
+func getFreq(st string) map[string]int {
+	input := strings.Fields(st)
+	freq := make(map[string]int)
+	for _, word := range input {
+		_, matched := freq[word]
+		if matched {
+			freq[word] += 1
+		} else {
+			freq[word] = 1
+		}
+	}
+	return freq
+}
+
 func Extract(result map[string]interface{},
 	stopwordMap map[string]interface{},
 	sentence_hyli string,
@@ -121,9 +135,10 @@ func Extract(result map[string]interface{},
 	split_stemmed_un_clean := delete_empty(split_stemmed_un)
 
 	m := make(map[string]float32)
+	counts := getFreq(strings.Join(split_stemmed, " "))
 
 	for k := range split_stemmed_un_clean {
-		res1 := strings.Count(strings.Join(split_stemmed, " "), split_stemmed_un_clean[k])
+		res1 := counts[split_stemmed_un_clean[k]]
 		tf := float32(res1) / float32(len(split_stemmed))
 		idf := result[split_stemmed_un_clean[k]]
 		if idf == nil {
