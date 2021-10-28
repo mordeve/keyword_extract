@@ -133,7 +133,7 @@ func Extract(result map[string]interface{},
 	split_un_clean := delete_empty(split_un)
 
 	m := make(map[string]float32)
-	stems := getStem(split_un_clean, "4")
+	stems := getStem(split_un_clean, case_)
 	var split_un_clean_stemmed []string
 	for k := range split {
 		split_un_clean_stemmed = append(split_un_clean_stemmed,
