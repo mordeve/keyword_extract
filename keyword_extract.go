@@ -79,12 +79,12 @@ func delete_empty(s []string) []string {
 	return r
 }
 
-func getStem(s []string, case_ string) []string {
-	var res []string
+func getStem(s []string, case_ string) map[string]string {
+	res := make(map[string]string)
 	for _, word := range s {
 		resStem := stemmer(word, case_)["stem"]
 		if resStem != "nan" {
-			res = append(res, resStem)
+			res[word] = resStem
 		}
 	}
 	return res
@@ -129,26 +129,36 @@ func Extract(result map[string]interface{},
 	cleaned_hyli := stopwords.CleanString(cleaned_hyli_punc, stopwordMap, true)
 
 	split := strings.Split(cleaned_hyli, " ")
-	split_stemmed := getStem(split, case_)
-
-	split_stemmed_un := Unique(split_stemmed)
-	split_stemmed_un_clean := delete_empty(split_stemmed_un)
+	split_un := Unique(split)
+	split_un_clean := delete_empty(split_un)
 
 	m := make(map[string]float32)
-	counts := getFreq(strings.Join(split_stemmed, " "))
+	stems := getStem(split_un_clean, "4")
+	var split_un_clean_stemmed []string
+	for k := range split {
+		split_un_clean_stemmed = append(split_un_clean_stemmed,
+			stems[split[k]])
+	}
 
-	for k := range split_stemmed_un_clean {
-		res1 := counts[split_stemmed_un_clean[k]]
-		tf := float32(res1) / float32(len(split_stemmed))
-		idf := result[split_stemmed_un_clean[k]]
+	counts := getFreq(strings.Join(split_un_clean_stemmed, " "))
+
+	//fmt.Println(split_un_clean)
+	//fmt.Println(split_un_clean_stemmed)
+	split_un_clean_stemmed_un := Unique(split_un_clean_stemmed)
+	split_un_clean_stemmed_un_clean := delete_empty(split_un_clean_stemmed_un)
+	//fmt.Println(split_un_clean_stemmed_un)
+
+	for k := range split_un_clean_stemmed_un_clean {
+		res1 := counts[split_un_clean_stemmed_un_clean[k]]
+		//log.Println(split_un_clean_stemmed_un_clean[k], ": ", res1, "times.")
+		tf := float32(res1) / float32(len(split_un_clean_stemmed))
+		idf := result[split_un_clean_stemmed_un_clean[k]]
 		if idf == nil {
 			idf = 5.85
 		}
 		iAreaId := idf.(float64)
-		//fmt.Println(idf)
-		//fmt.Println(tf)
-		//fmt.Println(tf * float32(iAreaId))
-		m[split_stemmed_un_clean[k]] = (tf * float32(iAreaId))
+		// log.Println(split_stemmed_un_clean[k], tf, idf, tf*float32(iAreaId))
+		m[split_un_clean_stemmed_un_clean[k]] = (tf * float32(iAreaId))
 	}
 
 	type kv struct {
